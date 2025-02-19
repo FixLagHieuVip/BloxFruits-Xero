@@ -1,59 +1,50 @@
-local ToDisable = {
-    Textures = true,
-    VisualEffects = true,
-    Parts = true,
-    Particles = true,
-    Sky = true
-}
+local decalsyeeted = false
+local g = game
+local w = g.Workspace
+local l = g.Lighting
+local t = w.Terrain
 
-local ToEnable = {
-    FullBright = false
-}
+-- Tắt hiệu ứng nước
+t.WaterWaveSize = 0
+t.WaterWaveSpeed = 0
+t.WaterReflectance = 0
+t.WaterTransparency = 0
 
-local Stuff = {}
+-- Giảm chất lượng ánh sáng
+l.GlobalShadows = false
+l.FogEnd = 1e9 -- Vô hiệu hóa sương mù
+l.Brightness = 0
 
-for _, v in next, game:GetDescendants() do
-    if ToDisable.Parts and (v:IsA("Part") or v:IsA("Union") or v:IsA("BasePart")) then
-        v.Material = Enum.Material.SmoothPlastic
-        table.insert(Stuff, v)
-    end
+-- Giảm chất lượng đồ họa (nếu có quyền)
+pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
 
-    if ToDisable.Particles and (v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Explosion") or v:IsA("Sparkles") or v:IsA("Fire")) then
-        v.Enabled = false
-        table.insert(Stuff, v)
-    end
-
-    if ToDisable.VisualEffects and (v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect")) then
-        v.Enabled = false
-        table.insert(Stuff, v)
-    end
-
-    if ToDisable.Textures and (v:IsA("Decal") or v:IsA("Texture")) then
-        v.Texture = ""
-        table.insert(Stuff, v)
-    end
-
-    if ToDisable.Sky and v:IsA("Sky") then
-        v.Parent = nil
-        table.insert(Stuff, v)
+-- Duyệt qua tất cả đối tượng trong game
+for _, v in pairs(g:GetDescendants()) do
+    if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
+        v.Material = Enum.Material.Plastic
+        v.Reflectance = 0
+    elseif v:IsA("Decal") or v:IsA("Texture") then
+        if decalsyeeted then
+            v.Transparency = 1 -- Ẩn decal và texture
+        end
+    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+        v.Lifetime = NumberRange.new(0) -- Xóa hiệu ứng hạt
+    elseif v:IsA("Explosion") then
+        v.BlastPressure = 1
+        v.BlastRadius = 1 -- Giảm sức ảnh hưởng của vụ nổ
+    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+        v.Enabled = false -- Tắt hiệu ứng lửa, ánh sáng, khói, lấp lánh
+    elseif v:IsA("MeshPart") then
+        v.Material = Enum.Material.Plastic
+        v.Reflectance = 0
+        v.TextureID = "" -- Xóa Texture thay vì dùng ID sai
     end
 end
 
-game:GetService("TestService"):Message("Effects Disabler Script : Successfully disabled " .. #Stuff .. " assets / effects. Settings :")
-
-for i, v in next, ToDisable do
-    print(tostring(i) .. ": " .. tostring(v))
-end
-
-if ToEnable.FullBright then
-    local Lighting = game:GetService("Lighting")
-    Lighting.FogColor = Color3.fromRGB(255, 255, 255)
-    Lighting.FogEnd = math.huge
-    Lighting.FogStart = math.huge
-    Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-    Lighting.Brightness = 5
-    Lighting.ColorShift_Bottom = Color3.fromRGB(255, 255, 255)
-    Lighting.ColorShift_Top = Color3.fromRGB(255, 255, 255)
-    Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+-- Tắt hiệu ứng hình ảnh trong Lighting
+for _, e in pairs(l:GetChildren()) do
+    if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+        e.Enabled = false
+    end
 end
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Xero2409/XeroHub/refs/heads/main/main.lua"))()
